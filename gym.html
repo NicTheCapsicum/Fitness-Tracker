@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="en" style="background:#07090d;color-scheme:dark;">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="PT Log">
+<meta name="theme-color" content="#07090d">
+<meta name="color-scheme" content="dark">
+<title>PT Log</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#07090d;--bg1:#0c1018;--bg2:#111620;--bg3:#161d2a;--bg4:#1c2535;
+  --line:rgba(120,180,255,0.07);
+  --line2:rgba(120,180,255,0.13);
+  --line3:rgba(120,180,255,0.22);
+  --txt:#dde8f5;--txt2:#6a829e;--txt3:#334055;
+  --cyan:#00cfff;--cyan-d:rgba(0,207,255,0.09);--cyan-b:rgba(0,207,255,0.22);
+  --mag:#ff2d9e;--mag-d:rgba(255,45,158,0.09);--mag-b:rgba(255,45,158,0.22);
+  --grn:#00f0a0;--grn-d:rgba(0,240,160,0.09);--grn-b:rgba(0,240,160,0.22);
+  --amb:#ffaa00;--amb-d:rgba(255,170,0,0.09);--amb-b:rgba(255,170,0,0.22);
+  --red:#ff3355;--red-d:rgba(255,51,85,0.09);--red-b:rgba(255,51,85,0.22);
+  --pur:#a855f7;--pur-d:rgba(168,85,247,0.09);--pur-b:rgba(168,85,247,0.22);
+  --r:10px;--r-sm:7px;
+  --mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;
+}
+html,body{background:#07090d!important;}
+body{font-family:var(--sans);color:var(--txt);min-height:100dvh;overflow-x:hidden;
+  padding-bottom:calc(68px + env(safe-area-inset-bottom,0px));}
+::-webkit-scrollbar{width:0;}
+
+/* ── Topbar ── */
+.topbar{
+  position:sticky;top:0;z-index:50;
+  padding:calc(env(safe-area-inset-top,0px)+13px) 18px 13px;
+  background:rgba(7,9,13,0.92);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--line2);display:flex;align-items:center;justify-content:space-between;
+}
+.logo{font-family:var(--mono);font-size:13px;font-weight:600;letter-spacing:.20em;text-transform:uppercase;color:var(--cyan);}
+.logo em{color:var(--mag);font-style:normal;}
+.week-badge{font-family:var(--mono);font-size:9px;letter-spacing:.08em;color:var(--amb);
+  background:var(--amb-d);border:1px solid var(--amb-b);padding:3px 10px;border-radius:3px;}
+
+/* ── Layout ── */
+.wrap{padding:0 16px;max-width:580px;margin:0 auto;}
+.page{display:none;padding:0 0 4px;}
+.page.active{display:block;animation:rise .18s ease;}
+@keyframes rise{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── Nav ── */
+.nav{
+  position:fixed;bottom:0;left:0;right:0;z-index:50;
+  background:rgba(7,9,13,0.95);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border-top:1px solid var(--line2);display:flex;gap:2px;
+  padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px));
+}
+.nb{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;
+  background:none;border:none;cursor:pointer;padding:7px 2px;border-radius:var(--r-sm);
+  color:var(--txt3);font-family:var(--sans);transition:color .15s,background .15s;}
+.nb.active{color:var(--cyan);background:var(--cyan-d);}
+.nb:not(.active):hover{color:var(--txt2);background:var(--bg2);}
+.nb-icon{font-size:17px;}
+.nb-lbl{font-family:var(--mono);font-size:9px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;}
+
+/* ── Section label ── */
+.sl{font-family:var(--mono);font-size:9px;font-weight:500;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--txt3);margin:22px 0 10px;
+  display:flex;align-items:center;gap:10px;}
+.sl::after{content:'';flex:1;height:1px;background:var(--line2);}
+
+/* ── Week grid ── */
+.week-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:7px;}
+.day-card{background:var(--bg1);border:1px solid var(--line2);border-radius:var(--r);
+  padding:13px 14px;cursor:pointer;transition:border-color .15s,background .15s;
+  position:relative;overflow:hidden;}
+.day-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,var(--cyan-b),transparent 70%);opacity:0;transition:opacity .15s;}
+.day-card:hover{background:var(--bg2);border-color:var(--line3);}
+.day-card:hover::before{opacity:1;}
+.day-card.done{border-color:var(--grn-b);}
+.day-card.done::before{opacity:1;background:linear-gradient(90deg,var(--grn-b),transparent 70%);}
+.day-card.partial{border-color:var(--amb-b);}
+.day-card.partial::before{opacity:1;background:linear-gradient(90deg,var(--amb-b),transparent 70%);}
+.day-card.rest-day{opacity:.55;cursor:default;}
+.day-name{font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--txt3);margin-bottom:6px;}
+.day-name.c-cyan{color:var(--cyan);}
+.day-title{font-size:13px;font-weight:500;color:var(--txt);margin-bottom:5px;line-height:1.3;}
+.day-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;}
+.tag{font-family:var(--mono);font-size:8px;letter-spacing:.06em;padding:2px 6px;border-radius:3px;
+  border:1px solid;}
+.tag-row{background:var(--cyan-d);border-color:var(--cyan-b);color:var(--cyan);}
+.tag-swim{background:var(--pur-d);border-color:var(--pur-b);color:var(--pur);}
+.tag-str{background:var(--mag-d);border-color:var(--mag-b);color:var(--mag);}
+.tag-rest{background:var(--bg3);border-color:var(--line2);color:var(--txt3);}
+.day-prog{margin-top:8px;height:2px;background:var(--bg4);border-radius:1px;overflow:hidden;}
+.day-prog-fill{height:100%;background:var(--grn);border-radius:1px;transition:width .4s ease;}
+.day-prog-fill.partial{background:var(--amb);}
+.prog-txt{font-family:var(--mono);font-size:8px;color:var(--txt3);margin-top:4px;}
+
+/* ── Phase block ── */
+.phase-header{background:var(--bg1);border:1px solid var(--line2);border-radius:var(--r);
+  padding:16px;margin-bottom:10px;position:relative;overflow:hidden;}
+.phase-header::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,var(--cyan-b),transparent 70%);}
+.phase-name{font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--txt3);margin-bottom:5px;}
+.phase-goal{font-size:13px;color:var(--txt);line-height:1.5;}
+
+/* ── Week picker ── */
+.week-picker{display:flex;align-items:center;gap:10px;margin-bottom:18px;padding:12px 14px;
+  background:var(--bg1);border:1px solid var(--line2);border-radius:var(--r);}
+.wp-btn{background:var(--bg2);border:1px solid var(--line2);color:var(--txt2);
+  font-family:var(--mono);font-size:12px;padding:5px 11px;border-radius:var(--r-sm);cursor:pointer;
+  transition:color .15s,border-color .15s;-webkit-tap-highlight-color:transparent;}
+.wp-btn:hover{color:var(--cyan);border-color:var(--cyan-b);}
+.wp-btn:active{background:var(--bg3);}
+.wp-mid{flex:1;text-align:center;}
+.wp-num{font-family:var(--mono);font-size:18px;font-weight:300;color:var(--txt);}
+.wp-lbl{font-family:var(--mono);font-size:8px;letter-spacing:.10em;text-transform:uppercase;color:var(--txt3);margin-top:2px;}
+
+/* ── Session detail ── */
+.session-back{font-family:var(--mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--cyan);background:none;border:none;cursor:pointer;padding:0;
+  display:flex;align-items:center;gap:6px;margin-bottom:18px;margin-top:8px;-webkit-tap-highlight-color:transparent;}
+.session-back:hover{color:var(--txt);}
+.session-title{font-family:var(--mono);font-size:18px;font-weight:300;color:var(--txt);
+  letter-spacing:-.01em;margin-bottom:4px;}
+.session-sub{font-family:var(--mono);font-size:9px;letter-spacing:.10em;text-transform:uppercase;
+  color:var(--txt3);margin-bottom:20px;}
+
+/* ── Exercise blocks ── */
+.ex-block{background:var(--bg1);border:1px solid var(--line2);border-radius:var(--r);
+  margin-bottom:8px;overflow:hidden;}
+.ex-block-hdr{padding:12px 14px;display:flex;align-items:center;justify-content:space-between;
+  cursor:pointer;-webkit-tap-highlight-color:transparent;}
+.ex-block-hdr:hover{background:var(--bg2);}
+.ex-block-title{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.12em;
+  text-transform:uppercase;}
+.ex-block-title.c-cyan{color:var(--cyan);}
+.ex-block-title.c-pur{color:var(--pur);}
+.ex-block-title.c-mag{color:var(--mag);}
+.ex-block-title.c-grn{color:var(--grn);}
+.ex-block-title.c-amb{color:var(--amb);}
+.ex-chev{font-family:var(--mono);font-size:10px;color:var(--txt3);transition:transform .2s;}
+.ex-chev.open{transform:rotate(180deg);}
+.ex-block-body{display:none;padding:0 14px 14px;}
+.ex-block-body.open{display:block;animation:rise .15s ease;}
+
+/* ── Spec row ── */
+.spec-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;}
+.spec-item{background:var(--bg2);border:1px solid var(--line2);border-radius:var(--r-sm);
+  padding:8px 10px;}
+.spec-lbl{font-family:var(--mono);font-size:8px;letter-spacing:.10em;text-transform:uppercase;
+  color:var(--txt3);margin-bottom:3px;}
+.spec-val{font-family:var(--mono);font-size:13px;color:var(--txt);}
+.spec-val.c-cyan{color:var(--cyan);}
+.spec-val.c-amb{color:var(--amb);}
+.spec-val.c-grn{color:var(--grn);}
+.spec-val.c-pur{color:var(--pur);}
+.spec-val.c-mag{color:var(--mag);}
+
+/* ── Exercise items (with tick) ── */
+.ex-item{display:flex;align-items:flex-start;gap:10px;padding:9px 0;
+  border-top:1px solid var(--line);cursor:pointer;-webkit-tap-highlight-color:transparent;}
+.ex-item:first-child{border-top:none;}
+.ex-tick{width:20px;height:20px;min-width:20px;border:1px solid var(--line3);border-radius:4px;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--mono);font-size:10px;color:transparent;
+  transition:background .15s,border-color .15s,color .15s;margin-top:1px;}
+.ex-item.checked .ex-tick{background:var(--grn-d);border-color:var(--grn-b);color:var(--grn);}
+.ex-item.checked .ex-name{color:var(--txt3);text-decoration:line-through;text-decoration-color:var(--txt3);}
+.ex-name{font-size:13px;color:var(--txt);line-height:1.4;}
+.ex-detail{font-family:var(--mono);font-size:10px;color:var(--txt2);margin-top:2px;line-height:1.5;}
+
+/* ── Option selector (Friday) ── */
+.option-tabs{display:flex;gap:6px;margin-bottom:12px;}
+.opt-tab{flex:1;font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:.10em;
+  text-transform:uppercase;text-align:center;padding:8px 4px;border-radius:var(--r-sm);
+  border:1px solid var(--line2);background:var(--bg2);color:var(--txt3);
+  cursor:pointer;transition:all .15s;-webkit-tap-highlight-color:transparent;}
+.opt-tab.active{background:var(--cyan-d);border-color:var(--cyan-b);color:var(--cyan);}
+
+/* ── Session complete banner ── */
+.complete-banner{background:var(--grn-d);border:1px solid var(--grn-b);border-radius:var(--r);
+  padding:12px 14px;display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.complete-icon{font-family:var(--mono);font-size:14px;color:var(--grn);}
+.complete-txt{font-family:var(--mono);font-size:10px;letter-spacing:.06em;color:var(--grn);}
+
+/* ── Alerts ── */
+.alert{border-radius:var(--r-sm);padding:11px 13px;font-size:12px;line-height:1.6;
+  margin-bottom:8px;display:flex;gap:10px;align-items:flex-start;border:1px solid;}
+.ai{flex-shrink:0;font-family:var(--mono);font-size:11px;color:inherit;margin-top:1px;}
+.a-amb{background:var(--amb-d);border-color:var(--amb-b);color:var(--amb);}
+.a-cyn{background:var(--cyan-d);border-color:var(--cyan-b);color:var(--cyan);}
+.a-grn{background:var(--grn-d);border-color:var(--grn-b);color:var(--grn);}
+
+/* ── Progress page ── */
+.prog-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:7px;}
+.prog-card{background:var(--bg1);border:1px solid var(--line2);border-radius:var(--r);padding:12px 13px;}
+.prog-card-lbl{font-family:var(--mono);font-size:8px;letter-spacing:.12em;text-transform:uppercase;color:var(--txt3);margin-bottom:7px;}
+.prog-card-val{font-family:var(--mono);font-size:22px;font-weight:300;color:var(--txt);}
+.prog-card-sub{font-family:var(--mono);font-size:9px;color:var(--txt3);margin-top:3px;}
+.prog-bar-card{background:var(--bg1);border:1px solid var(--line2);border-radius:var(--r);padding:16px;margin-bottom:8px;}
+.prog-bar-row{margin-bottom:14px;}
+.prog-bar-row:last-child{margin-bottom:0;}
+.prog-bar-hdr{display:flex;justify-content:space-between;margin-bottom:6px;}
+.prog-bar-name{font-size:12px;color:var(--txt2);}
+.prog-bar-pct{font-family:var(--mono);font-size:9px;padding:2px 7px;border-radius:3px;border:1px solid;}
+.pbar-track{height:2px;background:var(--bg4);}
+.pbar-fill{height:2px;transition:width .6s cubic-bezier(.4,0,.2,1);}
+
+/* ── Reset btn ── */
+.reset-btn{width:100%;background:var(--bg2);border:1px solid var(--line2);color:var(--txt2);
+  font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;
+  padding:11px;border-radius:var(--r);cursor:pointer;margin-top:6px;transition:all .15s;}
+.reset-btn:hover{border-color:var(--red-b);color:var(--red);background:var(--red-d);}
+
+/* ── Phase info ── */
+.phase-pill{display:inline-block;font-family:var(--mono);font-size:8px;letter-spacing:.10em;
+  text-transform:uppercase;padding:3px 8px;border-radius:3px;border:1px solid;margin-bottom:4px;}
+.ph-1{background:var(--grn-d);border-color:var(--grn-b);color:var(--grn);}
+.ph-2{background:var(--amb-d);border-color:var(--amb-b);color:var(--amb);}
+.ph-3{background:var(--pur-d);border-color:var(--pur-b);color:var(--pur);}
+.ph-4{background:var(--red-d);border-color:var(--red-b);color:var(--red);}
+.ph-5{background:var(--cyan-d);border-color:var(--cyan-b);color:var(--cyan);}
+.ph-6{background:var(--mag-d);border-color:var(--mag-b);color:var(--mag);}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo">PT<em>.</em>Log</div>
+  <div class="week-badge" id="topbar-week">WEEK 1</div>
+</div>
+
+<!-- NAV -->
+<nav class="nav">
+  <button class="nb active" onclick="showPage('schedule',this)">
+    <span class="nb-icon">⬛</span>
+    <span class="nb-lbl">Schedule</span>
+  </button>
+  <button class="nb" onclick="showPage('progress',this)">
+    <span class="nb-icon">◈</span>
+    <span class="nb-lbl">Progress</span>
+  </button>
+  <button class="nb" onclick="showPage('notes',this)">
+    <span class="nb-icon">≡</span>
+    <span class="nb-lbl">Notes</span>
+  </button>
+</nav>
+
+<!-- ═══════════════════════════════════════════ SCHEDULE PAGE -->
+<div class="page active" id="page-schedule">
+  <div class="wrap">
+    <!-- Week picker -->
+    <div style="height:18px;"></div>
+    <div class="week-picker">
+      <button class="wp-btn" onclick="changeWeek(-1)">‹</button>
+      <div class="wp-mid">
+        <div class="wp-num" id="wp-num">1</div>
+        <div class="wp-lbl" id="wp-lbl">Phase 1 — Weeks 1–3</div>
+      </div>
+      <button class="wp-btn" onclick="changeWeek(1)">›</button>
+    </div>
+
+    <!-- Phase info -->
+    <div class="phase-header" id="phase-header">
+      <div class="phase-name" id="phase-name-lbl">PHASE 1</div>
+      <div class="phase-goal" id="phase-goal-txt"></div>
+    </div>
+
+    <!-- Day grid -->
+    <div class="sl">This week</div>
+    <div class="week-grid" id="day-grid"></div>
+
+    <!-- Session detail (hidden until day tap) -->
+    <div id="session-panel" style="display:none;">
+      <button class="session-back" onclick="closeSession()">← Back to week</button>
+      <div id="session-content"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ PROGRESS PAGE -->
+<div class="page" id="page-progress">
+  <div class="wrap">
+    <div style="height:18px;"></div>
+    <div class="sl">Overall</div>
+    <div class="prog-grid">
+      <div class="prog-card">
+        <div class="prog-card-lbl">Week</div>
+        <div class="prog-card-val" id="pr-week">—</div>
+        <div class="prog-card-sub">of 25+ weeks</div>
+      </div>
+      <div class="prog-card">
+        <div class="prog-card-lbl">Phase</div>
+        <div class="prog-card-val" id="pr-phase" style="font-size:14px;padding-top:4px;">—</div>
+        <div class="prog-card-sub" id="pr-phase-sub"></div>
+      </div>
+      <div class="prog-card">
+        <div class="prog-card-lbl">Sessions done</div>
+        <div class="prog-card-val" id="pr-sessions">0</div>
+        <div class="prog-card-sub" id="pr-sess-sub">this week</div>
+      </div>
+      <div class="prog-card">
+        <div class="prog-card-lbl">Completion</div>
+        <div class="prog-card-val" id="pr-pct">0%</div>
+        <div class="prog-card-sub">this week</div>
+      </div>
+    </div>
+
+    <div class="sl">This week's days</div>
+    <div class="prog-bar-card" id="progress-bars"></div>
+
+    <div class="sl">History</div>
+    <div id="history-list"></div>
+
+    <button class="reset-btn" onclick="resetWeek()">Reset this week's ticks</button>
+    <div style="height:8px;"></div>
+    <button class="reset-btn" onclick="resetAll()">Reset all data</button>
+    <div style="height:8px;"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ NOTES PAGE -->
+<div class="page" id="page-notes">
+  <div class="wrap">
+    <div style="height:18px;"></div>
+    <div class="sl">Progression rules</div>
+    <div class="alert a-cyn"><span class="ai">//</span><span>Every 2–4 weeks: drop target rowing paces by 2–4 sec/500 m if too easy. Add 2 kg dumbbells or 4 kg goblet squat when all reps are clean. Shave 2–3 sec per 100 m swim every 3–6 weeks.</span></div>
+    <div class="alert a-amb"><span class="ai">!</span><span>If stalled: keep plan identical but back off intensities 10% for one week, then resume normally.</span></div>
+    <div class="alert a-amb"><span class="ai">!</span><span>If fatigued: choose Friday Option A, reduce Thursday speed set from 20 to 12 lengths.</span></div>
+
+    <div class="sl">Phase guide</div>
+    <div class="ex-block">
+      <div class="ex-block-hdr" onclick="toggleBlock('note-ph1',this)">
+        <span class="ex-block-title c-grn">Phase 1 — Weeks 1–3</span>
+        <span class="ex-chev">▾</span>
+      </div>
+      <div class="ex-block-body" id="note-ph1">
+        <p style="font-size:13px;color:var(--txt2);line-height:1.6;">Rebuild technique, consistency, and baseline fitness. Push-ups: +1 rep/session. Overhead press: 6 kg from Week 2. Goblet squat: 12 kg from Week 3. Row intervals: hold pace with less strain. Swimming: keep paces, focus on smoothness.</p>
+      </div>
+    </div>
+    <div class="ex-block">
+      <div class="ex-block-hdr" onclick="toggleBlock('note-ph2',this)">
+        <span class="ex-block-title c-amb">Phase 2 — Weeks 4–6</span>
+        <span class="ex-chev">▾</span>
+      </div>
+      <div class="ex-block-body" id="note-ph2">
+        <p style="font-size:13px;color:var(--txt2);line-height:1.6;">Increase strength, improve aerobic pace, build power. Push-ups to 3×10/12, then elevated. OH press 6 kg → 8 kg. Goblet 14–18 kg. RDL 12.5–14 kg/hand. Step-ups 5–8 kg. Row Wednesday: 6×5 min @ 2:08–2:10, SR 27–29. Friday: drop splits ~3 sec.</p>
+      </div>
+    </div>
+    <div class="ex-block">
+      <div class="ex-block-hdr" onclick="toggleBlock('note-ph3',this)">
+        <span class="ex-block-title c-pur">Phase 3 — Weeks 7–9</span>
+        <span class="ex-chev">▾</span>
+      </div>
+      <div class="ex-block-body" id="note-ph3">
+        <p style="font-size:13px;color:var(--txt2);line-height:1.6;">Mid-level strength, race-style rowing pace, swim efficiency. Push-ups 3×12–15, add vest in Wk 9. OH press 8 kg 3×8/10. Goblet 20–24 kg. RDL 16–20 kg/hand. Wednesday row: 5×5 min @ 2:06–2:08, SR 28–30. Swim speed: 1:45–1:50.</p>
+      </div>
+    </div>
+    <div class="ex-block">
+      <div class="ex-block-hdr" onclick="toggleBlock('note-ph4',this)">
+        <span class="ex-block-title c-mag">Phase 4 — Weeks 10–12</span>
+        <span class="ex-chev">▾</span>
+      </div>
+      <div class="ex-block-body" id="note-ph4">
+        <p style="font-size:13px;color:var(--txt2);line-height:1.6;">Consolidate strength, peak aerobic, add power. Weighted push-ups 5–8 kg. OH press 10 kg. Goblet 24–28 kg. RDL 20–24 kg. Row Wednesday: 4×6 min @ 2:03–2:06, SR 28–31. Swim: 1:40–1:45 fast, 2:05–2:10 secondary.</p>
+      </div>
+    </div>
+    <div class="ex-block">
+      <div class="ex-block-hdr" onclick="toggleBlock('note-ph5',this)">
+        <span class="ex-block-title c-cyan">Weeks 13–21</span>
+        <span class="ex-chev">▾</span>
+      </div>
+      <div class="ex-block-body" id="note-ph5">
+        <p style="font-size:13px;color:var(--txt2);line-height:1.6;"><strong style="color:var(--cyan)">Wks 13–15 Sharpen:</strong> Row Monday 10×1km @ 2:05–2:10 SR26. Wed 6×5min @ 2:02–2:06 SR28. Goblet 20kg, RDL 16kg, step-ups 8kg.<br><br><strong style="color:var(--amb)">Wks 16–18 Volume boost:</strong> Monday 12 reps, 7×5min @ 1:58–2:03. Goblet 22–24kg, RDL 20kg.<br><br><strong style="color:var(--pur)">Wks 19–21 Power:</strong> Row 10×1km @ 1:58–2:03 SR28. 6×6min @ 1:55–2:00. OH press 14–16kg, goblet 28–30kg.</p>
+      </div>
+    </div>
+    <div class="ex-block">
+      <div class="ex-block-hdr" onclick="toggleBlock('note-ph6',this)">
+        <span class="ex-block-title c-mag">Weeks 22–24 — Peak</span>
+        <span class="ex-chev">▾</span>
+      </div>
+      <div class="ex-block-body" id="note-ph6">
+        <p style="font-size:13px;color:var(--txt2);line-height:1.6;">Highest intensity of 24-week block. Monday 10×1km @ 1:54–1:59 SR28–30. Wednesday 8×4min @ 1:52–1:57 SR30. OH press 16–18kg, goblet 30–32kg, RDL 26kg. Swim: 20×1 length @ 1:30–1:40, secondary 1:50–1:55.</p>
+      </div>
+    </div>
+    <div style="height:8px;"></div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+//  DATA
+// ═══════════════════════════════════════════════════════════════
+
+const PHASES = [
+  {weeks:[1,2,3], label:'Phase 1', range:'Weeks 1–3', cls:'ph-1', goal:'Rebuild technique, consistency, and baseline fitness. Stay conservative — focus on form over load.'},
+  {weeks:[4,5,6], label:'Phase 2', range:'Weeks 4–6', cls:'ph-2', goal:'Increase strength, improve aerobic pace, build power. Push all metrics up by small, clean increments.'},
+  {weeks:[7,8,9], label:'Phase 3', range:'Weeks 7–9', cls:'ph-3', goal:'Build mid-level strength, improve race-style rowing pace, and swim efficiency.'},
+  {weeks:[10,11,12], label:'Phase 4', range:'Weeks 10–12', cls:'ph-4', goal:'Consolidate strength, peak aerobic fitness, add power and pace.'},
+  {weeks:[13,14,15], label:'Sharpen', range:'Weeks 13–15', cls:'ph-5', goal:'Keep volume similar to Phase 4 but raise quality: faster target paces, slightly higher stroke rates.'},
+  {weeks:[16,17,18], label:'Volume Boost', range:'Weeks 16–18', cls:'ph-5', goal:'Small but meaningful increases in total work — more repeats, extra reps, slightly longer intervals.'},
+  {weeks:[19,20,21], label:'Power & Efficiency', range:'Weeks 19–21', cls:'ph-6', goal:'Lower volume, higher intensity: faster rowing and swim targets, slightly heavier strength work.'},
+  {weeks:[22,23,24], label:'Peak Conditioning', range:'Weeks 22–24', cls:'ph-6', goal:'Highest intensity of the 24-week block. Best conditioning without tipping into overtraining.'},
+  {weeks:[25], label:'Permanent', range:'Week 25+', cls:'ph-5', goal:'Maintain and improve all performance metrics year-round. Adjust only paces and weights based on ongoing performance.'},
+];
+
+function getPhase(w) {
+  if(w>=25) return PHASES[8];
+  for(const p of PHASES) if(p.weeks.includes(w)) return p;
+  return PHASES[8];
+}
+
+// ── Week 1 base programme (template — modifications noted in PHASES)
+function getWeekData(w) {
+  // Determine if Weeks 13+ have defined data or fall back to W1 structure
+  // We define full session data per phase transition
+  const p = getPhase(w);
+
+  // Row Monday params
+  let monRowSets='10', monRowKm='1 km', monRowRes='10→1', monRowRate='24', monRowPace='2:24';
+  let monPushSets='3×8', monPressKg='5 kg', monPressSets='3×6', monDipSets='3×10', monExtKg='2 kg', monExtSets='2×12', monHoldSets='2×45 sec';
+  // Wed row
+  let wedSets='6', wedMins='4', wedRes='4', wedRate='26', wedPace='2:10', wedRestMin='1 min';
+  // Wed lower
+  let gobKg='10', gobSets='3×8', rdlKg='10', rdlSets='3×8', stepSets='3×8/leg', stepKg='—', legSets='2×10';
+  // Tue swim
+  let tueSets='4', tueLens='6', tuePace='2:30', tueKickSets='4', tueKickLens='2';
+  // Thu swim
+  let thuSets='10', thuLens='1', thuPace='2:00', thuSecSets='4', thuSecLens='3', thuSecPace='2:20';
+  // Fri
+  let frOptADist='8 km', frOptARate='20', frOptAPace='2:25';
+  let frOptBMins='10', frOptBPace='2:22';
+  let frOptCSets='5', frOptCDist='1,500 m', frOptCPace='2:18', frOptCRate='24', frOptCRes='2', frOptCRest='120 sec';
+
+  // Phase-specific overrides
+  if(w>=4&&w<=6){
+    monRowPace='2:22'; monPressKg=w>=5?'6–8 kg':'6 kg'; monPressSets=w>=6?'3×6':'3×8';
+    monPushSets=w===4?'3×10':w===5?'3×12':'3×12 elevated';
+    gobKg=w===4?'14–16 kg':'16–18 kg'; gobSets='3×10'; rdlKg='12.5–14 kg'; stepKg='5–8 kg';
+    wedPace='2:08–2:10'; wedSets='6'; wedMins='5'; wedRate='27–29';
+    tueSets='5'; tuePace='2:20–2:25'; thuPace='1:50–1:55'; thuSecPace='2:15–2:18';
+    frOptAPace='2:22'; frOptBPace='2:19'; frOptCPace='2:15';
+  }
+  if(w>=7&&w<=9){
+    monRowPace='2:20'; monPressKg='8 kg'; monPressSets=w===9?'3×10':'3×8';
+    monPushSets=w===9?'3×12 + vest':'3×12–15';
+    gobKg='20–24 kg'; gobSets='3×10'; rdlKg='16–20 kg'; stepKg='10–12 kg'; legSets='3×10';
+    wedPace='2:06–2:08'; wedSets='5'; wedMins='5'; wedRate='28–30'; wedRestMin='90 sec';
+    tueSets='5'; tuePace='2:15–2:20'; thuPace='1:45–1:50'; thuSecPace='2:10–2:15';
+    frOptAPace='2:18–2:20'; frOptBPace='2:15–2:18'; frOptCPace='2:08–2:11';
+  }
+  if(w>=10&&w<=12){
+    monRowPace='2:15–2:17'; monRowRate='24'; monPressKg='10 kg'; monPressSets=w<=11?'3×6':'3×8';
+    monPushSets='3×10–12 weighted'; monDipSets='3×10–12';
+    gobKg='24–28 kg'; rdlKg='20–24 kg'; stepKg='12–14 kg'; legSets='3×12';
+    wedPace='2:03–2:06'; wedSets='4'; wedMins='6'; wedRate='28–31'; wedRestMin='2 min';
+    tueSets='5'; tuePace='2:10–2:15'; thuSets='12'; thuPace='1:40–1:45'; thuSecPace='2:05–2:10';
+    frOptAPace='2:15–2:18'; frOptBPace='2:12–2:15'; frOptCPace='2:05–2:08';
+  }
+  if(w>=13&&w<=15){
+    monRowPace='2:05–2:10'; monRowRate='26'; monRowRes='10→1';
+    monPushSets='3×12'; monPressKg='10 kg'; monPressSets='3×8'; monDipSets='3×14'; monExtKg='3 kg'; monHoldSets='2×60 sec';
+    gobKg='20 kg'; rdlKg='16 kg'; stepKg='8 kg'; legSets='2×12';
+    wedPace='2:02–2:06'; wedSets='6'; wedMins='5'; wedRate='28'; wedRestMin='1 min';
+    tueSets='4'; tueLens='6'; tuePace='2:05–2:10'; tueKickLens='2';
+    thuSets='12'; thuLens='1'; thuPace='1:45–1:50'; thuSecSets='4'; thuSecLens='3'; thuSecPace='2:05–2:10';
+    frOptADist='8 km'; frOptARate='20–22'; frOptAPace='2:10–2:15';
+    frOptBMins='10'; frOptBPace='2:08–2:12'; frOptCSets='5'; frOptCPace='2:06–2:10'; frOptCRest='90 sec';
+  }
+  if(w>=16&&w<=18){
+    monRowSets='12'; monRowPace='2:03–2:08'; monRowRate='26';
+    monPushSets='4×10'; monPressKg='12 kg'; monPressSets='3×8'; monDipSets='3×16'; monExtKg='3–4 kg'; monExtSets='3×12'; monHoldSets='3×60 sec';
+    gobKg='22–24 kg'; gobSets='4×10'; rdlKg='20 kg'; rdlSets='4×8'; stepKg='10 kg'; stepSets='3×12/leg'; legSets='3×12';
+    wedPace='1:58–2:03'; wedSets='7'; wedMins='5'; wedRate='28–30'; wedRestMin='1 min';
+    tueSets='5'; tueLens='6'; tuePace='2:00–2:05'; tueKickSets='4'; tueKickLens='3';
+    thuSets='14'; thuPace='1:40–1:48'; thuSecSets='4'; thuSecLens='4'; thuSecPace='2:00';
+    frOptADist='10 km'; frOptARate='20–22'; frOptAPace='2:10–2:14';
+    frOptBMins='12'; frOptBPace='2:07–2:11'; frOptCSets='6'; frOptCPace='2:04–2:08'; frOptCRest='90 sec';
+  }
+  if(w>=19&&w<=21){
+    monRowSets='10'; monRowPace='1:58–2:03'; monRowRate='28'; monRowRes='9→1';
+    monPushSets='4×12'; monPressKg='14–16 kg'; monPressSets='4×6'; monDipSets='4×12 weighted'; monExtKg='4 kg'; monExtSets='3×15'; monHoldSets='3×75 sec';
+    gobKg='28–30 kg'; gobSets='4×8'; rdlKg='24 kg'; rdlSets='4×6'; stepKg='12 kg'; stepSets='3×10/leg'; legSets='3×15';
+    wedPace='1:55–2:00'; wedSets='6'; wedMins='6'; wedRate='28–30'; wedRestMin='75 sec';
+    tueSets='6'; tueLens='6'; tuePace='1:55–2:00'; tueKickSets='4'; tueKickLens='3';
+    thuSets='16'; thuPace='1:35–1:45'; thuSecSets='4'; thuSecLens='4'; thuSecPace='1:55–2:00';
+    frOptADist='8 km'; frOptARate='22–24'; frOptAPace='2:04–2:09';
+    frOptBMins='12'; frOptBPace='2:03–2:08'; frOptCSets='5'; frOptCDist='2,000 m'; frOptCRate='24'; frOptCPace='2:00–2:04'; frOptCRest='2 min';
+  }
+  if(w>=22&&w<=24){
+    monRowSets='10'; monRowPace='1:54–1:59'; monRowRate='28–30'; monRowRes='8→1';
+    monPushSets='4×15'; monPressKg='16–18 kg'; monPressSets='4×6'; monDipSets='4×12 weighted (5–10 kg)'; monExtKg='4–5 kg'; monExtSets='3×15'; monHoldSets='3×90 sec';
+    gobKg='30–32 kg'; gobSets='4×10'; rdlKg='26 kg'; rdlSets='4×6'; stepKg='12–14 kg'; stepSets='3×12/leg'; legSets='3×8–10 hanging';
+    wedPace='1:52–1:57'; wedSets='8'; wedMins='4'; wedRate='30'; wedRestMin='60 sec';
+    tueSets='6'; tueLens='7'; tuePace='1:50–1:55'; tueKickSets='4'; tueKickLens='3';
+    thuSets='20'; thuPace='1:30–1:40'; thuSecSets='4'; thuSecLens='4'; thuSecPace='1:50–1:55';
+    frOptADist='10 km'; frOptARate='22–24'; frOptAPace='2:02–2:06';
+    frOptBMins='15'; frOptBPace='2:02–2:06'; frOptCSets='4'; frOptCDist='2,000 m'; frOptCRate='26'; frOptCPace='1:58–2:02'; frOptCRest='2 min';
+  }
+  if(w>=25){
+    monRowSets='10'; monRowPace='1:56–2:03'; monRowRate='28–30'; monRowRes='9→1';
+    monPushSets='4×12–15'; monPressKg='16–18 kg'; monPressSets='4×6'; monDipSets='4×12 weighted'; monExtKg='3–5 kg'; monExtSets='3×15'; monHoldSets='3×90 sec';
+    gobKg='28–32 kg'; gobSets='4×10'; rdlKg='24–26 kg'; rdlSets='4×6'; stepKg='12–14 kg'; stepSets='3×10/leg'; legSets='3×8–10 hanging';
+    wedPace='1:54–1:58'; wedSets='8'; wedMins='4'; wedRate='30'; wedRestMin='60 sec';
+    tueSets='6'; tueLens='7'; tuePace='1:50–1:55'; tueKickSets='4'; tueKickLens='3';
+    thuSets='20'; thuPace='1:30–1:40'; thuSecSets='4'; thuSecLens='4'; thuSecPace='1:50–1:55';
+    frOptADist='10 km'; frOptARate='22–24'; frOptAPace='2:02–2:06';
+    frOptBMins='15'; frOptBPace='2:02–2:06'; frOptCSets='4'; frOptCDist='2,000 m'; frOptCRate='26'; frOptCPace='1:58–2:02'; frOptCRest='2 min';
+  }
+
+  return {
+    mon: {
+      title:'Row + Upper Strength',
+      tags:['tag-row','tag-str'],
+      tagLabels:['Row','Strength'],
+      blocks:[
+        {
+          id:'mon-row', title:'Rowing', color:'c-cyan',
+          specs:[
+            {l:'Sets',v:monRowSets+' × '+monRowKm},
+            {l:'Resistance',v:monRowRes},
+            {l:'Stroke rate',v:monRowRate+' spm'},
+            {l:'Target pace',v:monRowPace+'/500 m'},
+            {l:'Rest',v:'60 sec'},
+          ],
+          items:[]
+        },
+        {
+          id:'mon-str', title:'Upper Strength', color:'c-mag',
+          specs:[],
+          items:[
+            {name:'Push-ups', detail:monPushSets+' — 90 s rest'},
+            {name:'DB overhead press', detail:monPressSets+' @ '+monPressKg+'/hand — 90 s rest'},
+            {name:'Bench dips', detail:monDipSets+' — 90 s rest'},
+            {name:'Cable external rotations', detail:monExtSets+' @ '+monExtKg+' — 60 s rest'},
+            {name:'Prone hold', detail:monHoldSets+' — 60 s rest'},
+          ]
+        }
+      ]
+    },
+    tue: {
+      title:'Swimming — Endurance',
+      tags:['tag-swim'],
+      tagLabels:['Swim'],
+      blocks:[
+        {
+          id:'tue-wu', title:'Warm-up', color:'c-pur',
+          specs:[{l:'Volume',v:'6 lengths easy'}],
+          items:[]
+        },
+        {
+          id:'tue-main', title:'Main Set', color:'c-pur',
+          specs:[
+            {l:'Sets',v:tueSets+' × '+tueLens+' lengths'},
+            {l:'Target pace',v:tuePace+'/100 m'},
+            {l:'Rest',v:'45 sec'},
+          ],
+          items:[]
+        },
+        {
+          id:'tue-kick', title:'Kick Set', color:'c-pur',
+          specs:[
+            {l:'Sets',v:tueKickSets+' × '+tueKickLens+' lengths'},
+            {l:'Rest',v:'20 sec'},
+          ],
+          items:[]
+        },
+        {
+          id:'tue-cd', title:'Cooldown', color:'c-pur',
+          specs:[{l:'Volume',v:'4 lengths easy'}],
+          items:[]
+        }
+      ]
+    },
+    wed: {
+      title:'Intervals + Lower Strength',
+      tags:['tag-row','tag-str'],
+      tagLabels:['Row','Strength'],
+      blocks:[
+        {
+          id:'wed-wu', title:'Warm-up', color:'c-amb',
+          specs:[{l:'Duration',v:'5 min @ res 1'}],
+          items:[]
+        },
+        {
+          id:'wed-int', title:'Row Intervals', color:'c-cyan',
+          specs:[
+            {l:'Sets',v:wedSets+' × '+wedMins+' min'},
+            {l:'Resistance',v:wedRes},
+            {l:'Stroke rate',v:wedRate+' spm'},
+            {l:'Target pace',v:wedPace+'/500 m'},
+            {l:'Rest',v:wedRestMin},
+          ],
+          items:[]
+        },
+        {
+          id:'wed-cd', title:'Cooldown', color:'c-amb',
+          specs:[{l:'Duration',v:'5 min @ res 1'}],
+          items:[]
+        },
+        {
+          id:'wed-str', title:'Lower Strength', color:'c-mag',
+          specs:[],
+          items:[
+            {name:'Goblet squats', detail:gobSets+' @ '+gobKg+' — 120 s rest'},
+            {name:'Romanian deadlifts', detail:rdlSets+' @ '+rdlKg+'/hand — 120 s rest'},
+            {name:'Step-ups', detail:stepSets+(stepKg!=='—'?' @ '+stepKg+'/hand':'')+' — 120 s rest'},
+            {name:'Leg raises', detail:legSets+' — 60 s rest'},
+          ]
+        }
+      ]
+    },
+    thu: {
+      title:'Swimming — Speed',
+      tags:['tag-swim'],
+      tagLabels:['Swim'],
+      blocks:[
+        {
+          id:'thu-wu', title:'Warm-up', color:'c-pur',
+          specs:[{l:'Volume',v:'6 lengths easy'}],
+          items:[]
+        },
+        {
+          id:'thu-sp', title:'Speed Set', color:'c-pur',
+          specs:[
+            {l:'Sets',v:thuSets+' × '+thuLens+' length'},
+            {l:'Target pace',v:thuPace+'/100 m'},
+            {l:'Rest',v:'20 sec'},
+          ],
+          items:[]
+        },
+        {
+          id:'thu-sec', title:'Secondary Aerobic', color:'c-pur',
+          specs:[
+            {l:'Sets',v:thuSecSets+' × '+thuSecLens+' lengths'},
+            {l:'Target pace',v:thuSecPace+'/100 m'},
+            {l:'Rest',v:'45 sec'},
+          ],
+          items:[]
+        },
+        {
+          id:'thu-cd', title:'Cooldown', color:'c-pur',
+          specs:[{l:'Volume',v:'3 lengths easy'}],
+          items:[]
+        }
+      ]
+    },
+    fri: {
+      title:'Row — Choose Option',
+      tags:['tag-row'],
+      tagLabels:['Row'],
+      options:[
+        {
+          label:'OPT A',
+          blocks:[{
+            id:'fri-a', title:'Option A — Steady State', color:'c-cyan',
+            specs:[
+              {l:'Distance',v:frOptADist},
+              {l:'Stroke rate',v:frOptARate+' spm'},
+              {l:'Resistance',v:'3'},
+              {l:'Target pace',v:frOptAPace+'/500 m'},
+            ],
+            items:[]
+          }]
+        },
+        {
+          label:'OPT B',
+          blocks:[{
+            id:'fri-b', title:'Option B — Rate Ladder', color:'c-cyan',
+            specs:[
+              {l:'Sets',v:'3 × '+frOptBMins+' min continuous'},
+              {l:'Rate progression',v:'20→22→24 spm'},
+              {l:'Target pace',v:frOptBPace+'/500 m'},
+              {l:'Rest',v:'None'},
+            ],
+            items:[]
+          }]
+        },
+        {
+          label:'OPT C',
+          blocks:[{
+            id:'fri-c', title:'Option C — Repeats', color:'c-cyan',
+            specs:[
+              {l:'Sets',v:frOptCSets+' × '+frOptCDist},
+              {l:'Stroke rate',v:frOptCRate+' spm'},
+              {l:'Resistance',v:frOptCRes},
+              {l:'Target pace',v:frOptCPace+'/500 m'},
+              {l:'Rest',v:frOptCRest},
+            ],
+            items:[]
+          }]
+        }
+      ]
+    },
+    sat:{title:'Rest',tags:['tag-rest'],tagLabels:['Rest'],rest:true},
+    sun:{title:'Rest',tags:['tag-rest'],tagLabels:['Rest'],rest:true},
+  };
+}
+
+const DAY_KEYS = ['mon','tue','wed','thu','fri','sat','sun'];
+const DAY_NAMES = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+
+// ═══════════════════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════════════════
+function gs(){ try{return JSON.parse(localStorage.getItem('ptlog')||'{}')}catch{return{}} }
+function ss(s){ localStorage.setItem('ptlog',JSON.stringify(s)) }
+
+let currentWeek = gs().currentWeek || 1;
+let currentDay = null;
+let currentFriOpt = 0;
+
+function saveWeek(w){ const s=gs(); s.currentWeek=w; ss(s); }
+
+function getTicks(w,day){
+  const s=gs();
+  return (s.ticks&&s.ticks['w'+w]&&s.ticks['w'+w][day])||{};
+}
+function setTick(w,day,id,val){
+  const s=gs();
+  if(!s.ticks) s.ticks={};
+  if(!s.ticks['w'+w]) s.ticks['w'+w]={};
+  if(!s.ticks['w'+w][day]) s.ticks['w'+w][day]={};
+  s.ticks['w'+w][day][id]=val;
+  ss(s);
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  NAV / PAGE
+// ═══════════════════════════════════════════════════════════════
+function showPage(name, btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  btn.classList.add('active');
+  if(name==='progress') renderProgress();
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  WEEK NAV
+// ═══════════════════════════════════════════════════════════════
+function changeWeek(d){
+  currentWeek = Math.max(1, Math.min(26, currentWeek+d));
+  saveWeek(currentWeek);
+  closeSession();
+  renderSchedule();
+}
+
+function renderSchedule(){
+  const w = currentWeek;
+  document.getElementById('topbar-week').textContent = 'WEEK '+w;
+  document.getElementById('wp-num').textContent = w>=25?'25+':w;
+  const p = getPhase(w);
+  document.getElementById('wp-lbl').textContent = p.range;
+  document.getElementById('phase-name-lbl').textContent = p.label.toUpperCase();
+  document.getElementById('phase-goal-txt').textContent = p.goal;
+  const phEl = document.getElementById('phase-header');
+  phEl.className='phase-header'; // reset
+  // color accent via border
+  const clsMap={'ph-1':'grn','ph-2':'amb','ph-3':'pur','ph-4':'mag','ph-5':'cyan','ph-6':'mag'};
+  const col = clsMap[p.cls]||'cyan';
+  phEl.style.borderColor='var(--'+col+'-b)';
+  renderDayGrid(w);
+}
+
+function renderDayGrid(w){
+  const data = getWeekData(w);
+  const grid = document.getElementById('day-grid');
+  grid.innerHTML = DAY_KEYS.map((dk,i) => {
+    const d = data[dk];
+    const ticks = getTicks(w, dk);
+    const {total, done} = countItems(d, ticks);
+    let statusClass = '';
+    let fillW = 0;
+    let progCls = '';
+    if(!d.rest){
+      if(total>0){
+        fillW = Math.round(done/total*100);
+        if(done>=total) statusClass='done';
+        else if(done>0) statusClass='partial';
+        progCls = done>=total?'':'partial';
+      }
+    }
+    const tagsHtml = d.tags.map((t,ti)=>`<span class="tag ${t}">${d.tagLabels[ti]}</span>`).join('');
+    const progHtml = d.rest?'':`<div class="day-prog"><div class="day-prog-fill ${progCls}" style="width:${fillW}%"></div></div><div class="prog-txt">${done}/${total} items</div>`;
+    return`<div class="day-card ${statusClass}${d.rest?' rest-day':''}" ${d.rest?'':'onclick="openDay(\''+dk+'\')"'}>
+      <div class="day-name c-cyan">${DAY_NAMES[i].toUpperCase()}</div>
+      <div class="day-title">${d.title}</div>
+      <div class="day-tags">${tagsHtml}</div>
+      ${progHtml}
+    </div>`;
+  }).join('');
+}
+
+function countItems(dayData, ticks){
+  let total=0, done=0;
+  if(dayData.rest) return {total:0,done:0};
+  if(dayData.options){
+    // Only count the selected option
+    const opt = dayData.options[0]; // default opt A for counting
+    for(const b of opt.blocks){
+      for(const item of (b.items||[])){
+        const id=b.id+'-'+item.name.replace(/\s+/g,'_');
+        total++; if(ticks[id]) done++;
+      }
+      if(b.specs&&b.specs.length){ total++; if(ticks[b.id+'-done']) done++; }
+    }
+  } else {
+    for(const b of (dayData.blocks||[])){
+      for(const item of (b.items||[])){
+        const id=b.id+'-'+item.name.replace(/\s+/g,'_');
+        total++; if(ticks[id]) done++;
+      }
+      if(b.specs&&b.specs.length){ total++; if(ticks[b.id+'-done']) done++; }
+    }
+  }
+  return {total,done};
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  SESSION DETAIL
+// ═══════════════════════════════════════════════════════════════
+function openDay(dk){
+  currentDay = dk;
+  currentFriOpt = 0;
+  const grid = document.getElementById('day-grid').parentElement;
+  document.getElementById('day-grid').style.display='none';
+  document.getElementById('phase-header').style.display='none';
+  document.querySelector('.sl').style.display='none';
+  document.querySelector('.week-picker').style.display='none';
+  const panel = document.getElementById('session-panel');
+  panel.style.display='block';
+  renderSessionContent();
+}
+
+function closeSession(){
+  currentDay=null;
+  document.getElementById('day-grid').style.display='grid';
+  document.getElementById('phase-header').style.display='block';
+  document.querySelector('.sl').style.display='flex';
+  document.querySelector('.week-picker').style.display='flex';
+  document.getElementById('session-panel').style.display='none';
+  renderDayGrid(currentWeek);
+}
+
+function renderSessionContent(){
+  const w = currentWeek;
+  const dk = currentDay;
+  const data = getWeekData(w);
+  const d = data[dk];
+  const ticks = getTicks(w, dk);
+  const i = DAY_KEYS.indexOf(dk);
+  const {total,done} = countItems(d, ticks);
+  const complete = total>0 && done>=total;
+
+  let html = `<div class="session-title">${DAY_NAMES[i]}</div>
+    <div class="session-sub">Week ${w} — ${d.title}</div>`;
+
+  if(complete){
+    html+=`<div class="complete-banner"><span class="complete-icon">✓</span><span class="complete-txt">Session complete</span></div>`;
+  }
+
+  if(d.options){
+    // Friday with options
+    html+=`<div class="option-tabs">`;
+    d.options.forEach((opt,oi)=>{
+      html+=`<div class="opt-tab ${oi===currentFriOpt?'active':''}" onclick="setFriOpt(${oi})">${opt.label}</div>`;
+    });
+    html+=`</div>`;
+    const opt = d.options[currentFriOpt];
+    html += renderBlocks(opt.blocks, ticks, w, dk);
+  } else {
+    html += renderBlocks(d.blocks||[], ticks, w, dk);
+  }
+
+  document.getElementById('session-content').innerHTML = html;
+}
+
+function renderBlocks(blocks, ticks, w, dk){
+  return blocks.map(b => {
+    const specsDone = b.specs&&b.specs.length ? (ticks[b.id+'-done']?true:false) : null;
+    let html=`<div class="ex-block">
+      <div class="ex-block-hdr" onclick="toggleBlock('${b.id}-body',this)">
+        <span class="ex-block-title ${b.color}">${b.title}</span>
+        <span class="ex-chev">▾</span>
+      </div>
+      <div class="ex-block-body open" id="${b.id}-body">`;
+
+    if(b.specs&&b.specs.length){
+      html+=`<div class="spec-grid">`;
+      b.specs.forEach(sp=>{
+        html+=`<div class="spec-item"><div class="spec-lbl">${sp.l}</div><div class="spec-val ${b.color}">${sp.v}</div></div>`;
+      });
+      html+=`</div>`;
+      // Tick for the whole block (e.g. row done)
+      const sdone = ticks[b.id+'-done'];
+      html+=`<div class="ex-item${sdone?' checked':''}" onclick="tickItem('${b.id+'-done'}','${w}','${dk}')">
+        <div class="ex-tick">${sdone?'✓':''}</div>
+        <div><div class="ex-name">Mark complete</div><div class="ex-detail">Tap when this block is finished</div></div>
+      </div>`;
+    }
+
+    (b.items||[]).forEach(item=>{
+      const id = b.id+'-'+item.name.replace(/\s+/g,'_');
+      const checked = !!ticks[id];
+      html+=`<div class="ex-item${checked?' checked':''}" onclick="tickItem('${id}','${w}','${dk}')">
+        <div class="ex-tick">${checked?'✓':''}</div>
+        <div><div class="ex-name">${item.name}</div><div class="ex-detail">${item.detail}</div></div>
+      </div>`;
+    });
+
+    html+=`</div></div>`;
+    return html;
+  }).join('');
+}
+
+function setFriOpt(i){
+  currentFriOpt=i;
+  renderSessionContent();
+}
+
+function tickItem(id, w, dk){
+  const t = getTicks(w, dk);
+  setTick(w, dk, id, !t[id]);
+  renderSessionContent();
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  COLLAPSIBLE BLOCKS
+// ═══════════════════════════════════════════════════════════════
+function toggleBlock(id, btn){
+  const el = document.getElementById(id);
+  if(!el) return;
+  const open = el.classList.toggle('open');
+  const chev = btn.querySelector('.ex-chev');
+  if(chev) chev.classList.toggle('open', !open);
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  PROGRESS PAGE
+// ═══════════════════════════════════════════════════════════════
+function renderProgress(){
+  const w = currentWeek;
+  const p = getPhase(w);
+  document.getElementById('pr-week').textContent = w>=25?'25+':w;
+  document.getElementById('pr-phase').textContent = p.label;
+  document.getElementById('pr-phase-sub').textContent = p.range;
+
+  const data = getWeekData(w);
+  let totalSessions=0, doneSessions=0, totalItems=0, doneItems=0;
+  const barRows = [];
+  DAY_KEYS.forEach((dk,i)=>{
+    const d=data[dk];
+    if(d.rest) return;
+    totalSessions++;
+    const ticks=getTicks(w,dk);
+    const {total,done}=countItems(d,ticks);
+    totalItems+=total; doneItems+=done;
+    if(done>=total&&total>0) doneSessions++;
+    barRows.push({name:DAY_NAMES[i],total,done});
+  });
+  document.getElementById('pr-sessions').textContent=doneSessions+'/'+totalSessions;
+  document.getElementById('pr-pct').textContent=totalItems>0?Math.round(doneItems/totalItems*100)+'%':'0%';
+
+  const barsEl=document.getElementById('progress-bars');
+  barsEl.innerHTML=barRows.map(r=>{
+    const pct=r.total>0?Math.round(r.done/r.total*100):0;
+    const col=pct>=100?'var(--grn)':pct>0?'var(--amb)':'var(--txt3)';
+    const pillCls=pct>=100?'a-grn':pct>0?'a-amb':'';
+    return`<div class="prog-bar-row">
+      <div class="prog-bar-hdr">
+        <span class="prog-bar-name">${r.name}</span>
+        <span class="prog-bar-pct" style="color:${col};border-color:${col};background:${col.replace(')',',0.09)').replace('var(--','rgba(').replace(')',',0.09)')}">${pct}%</span>
+      </div>
+      <div class="pbar-track"><div class="pbar-fill" style="width:${pct}%;background:${col}"></div></div>
+    </div>`;
+  }).join('');
+
+  // History
+  const s=gs();
+  const histEl=document.getElementById('history-list');
+  if(!s.ticks||Object.keys(s.ticks).length===0){
+    histEl.innerHTML=`<div class="alert a-cyn"><span class="ai">//</span><span>No history yet. Complete sessions to build a record.</span></div>`;
+    return;
+  }
+  let rows='';
+  const wks=Object.keys(s.ticks).map(k=>parseInt(k.slice(1))).sort((a,b)=>b-a);
+  for(const wNum of wks.slice(0,8)){
+    const wd=getWeekData(wNum);
+    let tot=0,dn=0;
+    DAY_KEYS.forEach(dk=>{
+      const dd=wd[dk]; if(dd.rest)return;
+      const t=s.ticks['w'+wNum]&&s.ticks['w'+wNum][dk]||{};
+      const c=countItems(dd,t); tot+=c.total; dn+=c.done;
+    });
+    const pct=tot>0?Math.round(dn/tot*100):0;
+    const col=pct>=100?'var(--grn)':pct>0?'var(--amb)':'var(--txt3)';
+    rows+=`<div class="prog-bar-row">
+      <div class="prog-bar-hdr">
+        <span class="prog-bar-name">Week ${wNum}</span>
+        <span class="prog-bar-pct" style="color:${col};border-color:${col}">${pct}%</span>
+      </div>
+      <div class="pbar-track"><div class="pbar-fill" style="width:${pct}%;background:${col}"></div></div>
+    </div>`;
+  }
+  histEl.innerHTML=`<div class="prog-bar-card">${rows}</div>`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  RESET
+// ═══════════════════════════════════════════════════════════════
+function resetWeek(){
+  if(!confirm('Reset all ticks for Week '+currentWeek+'?')) return;
+  const s=gs();
+  if(s.ticks) delete s.ticks['w'+currentWeek];
+  ss(s);
+  renderSchedule();
+  renderProgress();
+}
+function resetAll(){
+  if(!confirm('Reset ALL data? This cannot be undone.')) return;
+  localStorage.removeItem('ptlog');
+  currentWeek=1;
+  renderSchedule();
+  renderProgress();
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════════════
+renderSchedule();
+</script>
+</body>
+</html>
